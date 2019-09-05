@@ -614,7 +614,7 @@ def sunang(date, lat, lon, zone=0, slope=0, aspect=0):
         (lat_str, lon_str, dstr, slope, aspect, zone)
 
     out = sp.check_output([cmd_str], shell=True, universal_newlines=True)
-    proc = sp.Popen(cmd_str, shell=True, stdout=sp.PIPE).wait()
+    # proc = sp.Popen(cmd_str, shell=True, stdout=sp.PIPE).wait()
 
     c = out.rstrip().split(' ')
 
