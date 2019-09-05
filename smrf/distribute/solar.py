@@ -641,6 +641,7 @@ class solar(image_data.image_data):
         stdoutdata, stderrdata = irp.communicate()
 
         if irp.returncode != 0:
+            self._logger.error('Clear sky for IR failed')
             raise Exception('Clear sky for IR failed')
 
         ir = ipw.IPW(self.ir_file)
@@ -696,6 +697,7 @@ class solar(image_data.image_data):
         stdoutdata, stderrdata = visp.communicate()
 
         if visp.returncode != 0:
+            self._logger.error('Clear sky for visible failed')
             raise Exception('Clear sky for visible failed')
 
         # load clear sky files back in
