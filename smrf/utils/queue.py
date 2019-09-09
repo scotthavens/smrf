@@ -210,7 +210,7 @@ class QueueCleaner(threading.Thread):
                 # self._logger.debug('Clean cleaning %s -- %s' % (t, v))
                 self.queues[v].clean(t)
 
-            self._logger.debug('%s Cleaned from queues' % t)
+            self._logger.info('%s Cleaned from queues' % t)
 
 
 class QueueOutput(threading.Thread):

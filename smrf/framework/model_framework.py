@@ -765,8 +765,8 @@ class SMRF():
                         args=(q, self.data.cloud_factor)))
 
         # 7. thermal radiation
-        if self.distribute['thermal'].gridded and \
-               self.config['gridded']['data_type'] != 'hrrr':
+        if self.distribute['thermal'].gridded  and \
+                'hrrr' not in self.config['gridded']['data_type']:
             t.append(Thread(target=self.distribute['thermal'].distribute_thermal_thread,
                             name='thermal',
                             args=(q, self.data.thermal)))
