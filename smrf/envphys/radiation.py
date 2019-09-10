@@ -1019,7 +1019,14 @@ def get_hrrr_cloud(df_solar, df_meta, logger, lat, lon):
     df_cf = df_solar / basin_sol
 
     # linear interpolate the NaN values at night
-    df_cf = df_cf.interpolate(method='linear').ffill()
+    df_cf = df_cf.interpolate(method='linear').ffill().bfill()
+
+    # There may be some columns that are all NaN's so drop them
+    df_cf.dropna(axis=1, how='any', inplace=True)
+
+    if df_cf.isnull().values.any():
+        print(df_cf)
+        raise ValueError('NaN values still exist in the cloud factor')
 
     # Clean up the dataframe to be between 0 and 1
     df_cf[df_cf > 1.0] = 1.0

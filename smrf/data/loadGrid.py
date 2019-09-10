@@ -155,11 +155,15 @@ class grid():
             force_zone_number=self.force_zone_number,
             forecast_flag=self.forecast_flag)
 
+        # seems like the elevation might have some problems and return NaN's
+        metadata.dropna(how='any', axis=0, inplace=True)
+
         # the data may be returned as type=object, convert to numeric
         # correct for the timezone
         for key in data.keys():
             data[key] = data[key].apply(pd.to_numeric)
             data[key] = data[key].tz_localize(tz=self.time_zone)
+            data[key] = data[key][metadata.index] # filter to the stations if some were removed
 
         self.metadata = metadata
 
