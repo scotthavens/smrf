@@ -177,7 +177,7 @@ class QueueCleaner(threading.Thread):
     threads will have processed that time step and it's not longer needed
     """
 
-    def __init__(self, date_time, queue):
+    def __init__(self, date_time, queue, timeout=None):
         """
         Args:
             date_time: array of date_time
@@ -186,6 +186,7 @@ class QueueCleaner(threading.Thread):
         threading.Thread.__init__(self, name='cleaner')
         self.queues = queue
         self.date_time = date_time
+        self.timeout = timeout
 
         self._logger = logging.getLogger(__name__)
         self._logger.debug('Initialized cleaner thread')
@@ -202,7 +203,7 @@ class QueueCleaner(threading.Thread):
             # there is data there to be had
             for v in self.queues.keys():
                 # self._logger.debug('Clean checking %s -- %s' % (t, v))
-                self.queues[v].get(t)
+                self.queues[v].get(t, timeout=self.timeout)
 
             # now that we know there is data in all of the queues
             # that have the same time, clean up those times
@@ -218,7 +219,7 @@ class QueueOutput(threading.Thread):
     Takes values from the queue and outputs using 'out_func'
     """
 
-    def __init__(self, queue, date_time, out_func, out_frequency, nx, ny):
+    def __init__(self, queue, date_time, out_func, out_frequency, nx, ny, timeout=None):
         """
         Args:
             date_time: array of date_time
@@ -232,6 +233,7 @@ class QueueOutput(threading.Thread):
         self.out_frequency = out_frequency
         self.nx = nx
         self.ny = ny
+        self.timeout = timeout
 
         self._logger = logging.getLogger(__name__)
         self._logger.debug('Initialized output thread')
@@ -253,7 +255,7 @@ class QueueOutput(threading.Thread):
                 # get the output variables then pass to the function
                 for v in self.out_func.variable_list.values():
                     if v['variable'] in self.queues.keys():
-                        data = self.queues[v['variable']].get(t)
+                        data = self.queues[v['variable']].get(t, timeout=self.timeout)
 
                         if data is None:
                             data = np.zeros((self.ny, self.nx))

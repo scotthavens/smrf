@@ -649,10 +649,11 @@ class SMRF():
                                    self.out_func,
                                    self.config['output']['frequency'],
                                    self.topo.nx,
-                                   self.topo.ny))
+                                   self.topo.ny,
+                                   self.time_out))
 
         # the cleaner
-        t.append(queue.QueueCleaner(self.date_time, q))
+        t.append(queue.QueueCleaner(self.date_time, q, self.time_out))
 
         # start all the threads
         for i in range(len(t)):
