@@ -1,4 +1,5 @@
 import numpy as np
+from math import hypot
 
 
 def ihorizon(x, y, Z, azm, mu=0, offset=2, ncores=0):
@@ -197,11 +198,50 @@ def hor1f_simple(z):
     return h
 
 
-def hor1f(x, z, offset=1):
+def horval(z, delta, h):
     """
-    BROKEN: Haven't quite figured this one out
+    Calculate values of cosines of angles to horizons, measured
+    from zenith, from elevation difference and distance.  Let
+    G be the horizon angle from horizontal and note that:
 
-    Calculate the horizon pixel for all x,z
+        sin G = z / sqrt( z^2 + dis^2);
+
+    This result is the same as cos H, where H measured from zenith.
+
+    Args:
+        z: elevation vector
+        delta: spacing
+        h: horizon function output
+
+    Returns:
+        hcos: cosines of angles to horizon
+    """
+
+    hcos = np.zeros_like(z)
+    for i in range(len(z)):
+
+        # grid points to horizon
+        j = h[i]
+        d = j - i
+
+        # point is its own horizon
+        if (d == 0):
+            hcos[i] = 0
+
+        # else need to calculate sine */
+        else:
+            if (d < 0):
+                d = -d
+
+            diff = z[j] - z[i]
+            hcos[i] = diff / hypot(diff, d * delta)
+
+    return hcos
+
+
+def hor1f(z):
+    """
+    Calculate the horizon pixel for all z
     This mimics the algorthim from Dozier 1981 and the
     hor1f.c from IPW
 
@@ -211,24 +251,27 @@ def hor1f(x, z, offset=1):
     xrange stops one index before [stop]
 
     Args:
-        x - horizontal distances for points
         z - elevations for the points
 
     Returns:
         h - index to the horizon point
 
     20150601 Scott Havens
+    20191025 Scott Havens
     """
 
-    N = len(x)  # number of points to look at
-    x = np.array(x)
+    N = len(z)  # number of points to look at
+    # x = np.array(x)
     z = np.array(z)
 
-    # preallocate the h array
+    # preallocate the h array to zeros, what ealloc is doing
     h = np.zeros(N, dtype=int)
-    h[N-1] = N-1    # the end point is it's own horizon
 
-    # work backwards from the end for the pixels
+    # the end point is it's own horizon
+    h[N-1] = N-1
+
+    # loop runs from next-to-end backwards to the beginning
+    # range end is -1 to get the 0 index
     for i in range(N-2, -1, -1):
 
         zi = z[i]
@@ -236,7 +279,7 @@ def hor1f(x, z, offset=1):
         # Start with next-to-adjacent point in either forward or backward
         # direction, depending on which way loop is running. Note that we
         # don't consider the adjacent point; this seems to help reduce noise.
-        k = i + offset
+        k = i + 2
 
         if k >= N:
             k -= 1
@@ -244,18 +287,22 @@ def hor1f(x, z, offset=1):
         # loop until horizon is found
         # xrange will set the maximum number of iterations that can be
         # performed based on the length of the vector
-        for t in range(k, N):
+
+        j = k
+        k = h[j]
+        sij = _slope(i, zi, j, z[j])
+        sihj = _slope(i, zi, k, z[k])
+
+        # if slope(i,j) >= slope(i,h[j]), horizon has been found; otherwise
+        # set j to k (=h[j]) and loop again
+        # or if we are at the end of the section
+        while sij < sihj:
+
             j = k
             k = h[j]
 
-            sij = _slope(x[i], zi, x[j], z[j])
-            sihj = _slope(x[i], zi, x[k], z[k])
-
-            # if slope(i,j) >= slope(i,h[j]), horizon has been found; otherwise
-            # set j to k (=h[j]) and loop again
-            # or if we are at the end of the section
-            if sij > sihj:  # or k == N-1:
-                break
+            sij = _slope(i, zi, j, z[j])
+            sihj = _slope(i, zi, k, z[k])
 
         # if slope(i,j) > slope(j,h[j]), j is i's horizon; else if slope(i,j)
         # is zero, i is its own horizon; otherwise slope(i,j) = slope(i,h[j])
