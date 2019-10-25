@@ -1,5 +1,6 @@
 import unittest
-import os, shutil
+import os
+import shutil
 from inicheck.tools import get_user_config, check_config
 
 from smrf.framework.model_framework import can_i_run_smrf
@@ -29,7 +30,7 @@ class SMRFTestCase(unittest.TestCase):
         self.config_file = config_file
 
         # read in the base configuration
-        self.base_config = get_user_config(config_file, modules = 'smrf')
+        self.base_config = get_user_config(config_file, modules='smrf')
 
     def tearDown(self):
         """
@@ -42,10 +43,10 @@ class SMRFTestCase(unittest.TestCase):
             try:
                 if os.path.isfile(file_path):
                     os.unlink(file_path)
-                elif os.path.isdir(file_path): shutil.rmtree(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
             except Exception as e:
                 print(e)
-
 
 
 class TestConfigurations(SMRFTestCase):

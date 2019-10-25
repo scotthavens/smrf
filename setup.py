@@ -117,8 +117,7 @@ ext_modules += [
     Extension(mname,
               sources=[os.path.join(loc, val) for val in [
                   "topo_core.pyx",
-                  "hor1f.c",
-                  "horval.c"
+                  "hor1d.c",
               ]],
               include_dirs=[numpy.get_include()],
               extra_compile_args=['-fopenmp', '-O3'],

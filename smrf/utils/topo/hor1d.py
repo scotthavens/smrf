@@ -4,9 +4,60 @@ from math import hypot
 from smrf.utils.topo.core import topo_core
 
 
-def hor1d_c(z, spacing):
+def hor2d_c(z, spacing):
+    """
+    Calculate values of cosines of angles to horizons in 2 dimension, 
+    measured from zenith, from elevation difference and distance.  Let
+    G be the horizon angle from horizontal and note that:
 
-    h = np.zeros_like(z)  # , dtype=np.int)
+        sin G = z / sqrt( z^2 + dis^2);
+
+    This result is the same as cos H, where H measured from zenith.
+
+    Args:
+        z: elevation array
+        spacing: spacing of array
+
+    Returns:
+        hcos: cosines of angles to horizon
+    """
+
+    if z.ndim != 2:
+        raise ValueError('hor1d input of z is not a 2D array')
+
+    if z.dtype != np.double:
+        raise ValueError('hor1d input of z must be a double')
+
+    spacing = np.double(spacing)
+
+    h = np.zeros_like(z)
+    topo_core.c_hor2d(z, spacing, h)
+
+    return h
+
+
+def hor1d_c(z, spacing):
+    """
+    Calculate values of cosines of angles to horizons in 1 dimension, 
+    measured from zenith, from elevation difference and distance.  Let
+    G be the horizon angle from horizontal and note that:
+
+        sin G = z / sqrt( z^2 + dis^2);
+
+    This result is the same as cos H, where H measured from zenith.
+
+    Args:
+        z: elevation array
+        spacing: spacing of array
+
+    Returns:
+        hcos: cosines of angles to horizon
+    """
+
+    if z.ndim != 1:
+        raise ValueError('hor1d input of z is not a 1D array')
+
+    h = np.zeros_like(z)
     topo_core.c_hor1d(z, spacing, h)
 
     return h
