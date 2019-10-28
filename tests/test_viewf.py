@@ -4,7 +4,7 @@ import numpy as np
 import unittest
 
 from smrf.data import loadTopo
-from smrf.utils.topo import hor1d
+from smrf.utils.topo import hor1d, viewf
 
 from tests.test_configurations import SMRFTestCase
 
@@ -78,3 +78,51 @@ class TestViewf(SMRFTestCase):
         # plt.title('Hor1d difference from the East')
         # # plt.colorbar()
         # plt.show()
+
+    def test_viewf_RME(self):
+        """ Test the view factor for RME """
+
+        topo_config = {
+            'basin_lon': -116.7547,
+            'basin_lat': 43.067,
+            'filename': 'tests/RME/topo/topo.nc',
+            'type': 'netcdf',
+            'threading': False
+        }
+
+        # ~/code/ipw/src/bin/topocalc/horizon/hor1d/hor1d -a 90 dem.ipw > hor1d.ipw
+        # hor1d in the East direction
+        # hipw = ipw.IPW('tests/RME/gold/radiation/hor1d.ipw')
+        # hipw = hipw.bands[0].data
+
+        # IPW topo calc
+        topo = loadTopo.topo(topo_config, calcInput=True,
+                             tempDir='tests/RME/output')
+        dx = np.mean(np.diff(topo.x))
+
+        # Calcualte the sky view factor
+        svf = viewf.viewf(topo.dem, dx, slope=topo.slope)
+
+        plt.imshow(svf)
+        plt.title('Sky view factor')
+        plt.colorbar()
+        plt.show()
+
+    def test_skew(self):
+        """ Test the skew of an image """
+
+        arr = np.tile(range(1000), (1000, 1))
+
+        for angle in range(-45, 45, 5):
+            # skew the initial array
+            sarr = viewf.skew(arr, angle=angle)
+
+            # skew it back to original
+            sbarr = viewf.skew(sarr, angle=angle, fwd=False)
+
+            # ensure that the skewed back is the same as the original
+            self.assertTrue(np.all(arr == sbarr))
+
+        # test the error
+        self.assertRaises(ValueError, viewf.skew, arr, -100)
+        self.assertRaises(ValueError, viewf.skew, arr, 100)
