@@ -1,19 +1,39 @@
 import numpy as np
-from scipy import ndimage
+import collections
 
 from smrf.utils.topo import hor1d
 
 import matplotlib.pyplot as plt
 
 
-def viewf(dem, spacing, nangles=16, slope=None):
+def d2r(a): return a * np.pi / 180
+
+
+def viewf(dem, spacing, nangles=16, slope=None, aspect=None):
     """
     Calculate the sky view factor of a dem
+
+    terrain configuration factor (tvf) is defined as:
+        (1 + cos(slope))/2 - sky view factor
+
+    Based on the paper Dozier and Frew, 1990 and modified from
+    the Image Processing Workbench code base (Frew, 1990). The
+    Python version of sky view factor will be an almost exact
+    replication of the IPW command `viewf` minus rounding errors
+    from type and linear quantization.
 
     Args:
         spacing:
         dem:
         nangles:
+        slope: sin(slope) with range from 0 to 1
+        aspect: Aspect as radians from south (aspect 0 is toward
+                the south) with range from -pi to pi, with negative
+                values to the west and positive values to the east.
+
+    Returns:
+        svf: sky view factor
+        tcf: terrain configuration factor
 
     """
 
@@ -24,89 +44,207 @@ def viewf(dem, spacing, nangles=16, slope=None):
         raise ValueError('viewf number of angles can be 16 or 32')
 
     hcos = {}
+    Horizon = collections.namedtuple('Horizon', ['azimuth', 'hcos'])
 
     # East
-    hcos['e'] = hor1d.hor2d_c(dem, spacing)
+    hcos['e'] = Horizon(
+        d2r(90),
+        hor1d.hor2d_c(dem, spacing)
+    )
 
     # West
-    hcos['w'] = hor1d.hor2d_c(np.ascontiguousarray(dem[::-1]), spacing)
+    hcos['w'] = Horizon(
+        d2r(-90),
+        hor1d.hor2d_c(dem, spacing, fwd=False)
+    )
 
     # SSW
     t = skew(dem, -22.5).transpose()
-    hcos['ssw'] = skew(hor1d.hor2d_c(
-        np.ascontiguousarray(t), spacing).transpose(), -22.5, fwd=False)
+    hcos['ssw'] = Horizon(
+        d2r(-22.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -22.5, fwd=False)
+    )
 
     # NNE
-    hcos['nne'] = skew(hor1d.hor2d_c(
-        np.ascontiguousarray(t[::-1]), spacing).transpose(), -22.5, fwd=False)
+    hcos['nne'] = Horizon(
+        d2r(157.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -22.5, fwd=False)
+    )
 
     # SW
     t = skew(dem, -45).transpose()
-    hcos['sw'] = skew(hor1d.hor2d_c(np.ascontiguousarray(t),
-                                    spacing).transpose(), -45, fwd=False)
+    hcos['sw'] = Horizon(
+        d2r(-45),
+        skew(hor1d.hor2d_c(t, spacing).transpose(), -45, fwd=False)
+    )
 
     # NE
-    hcos['ne'] = skew(hor1d.hor2d_c(np.ascontiguousarray(
-        t[::-1]), spacing).transpose(), -45, fwd=False)
+    hcos['ne'] = Horizon(
+        d2r(135),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -45, fwd=False)
+    )
 
     # SSE
     t = skew(dem, 22.5).transpose()
-    hcos['sse'] = skew(hor1d.hor2d_c(np.ascontiguousarray(t),
-                                     spacing).transpose(), 22.5, fwd=False)
+    hcos['sse'] = Horizon(
+        d2r(22.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), 22.5, fwd=False)
+    )
 
     # NNW
-    hcos['nnw'] = skew(hor1d.hor2d_c(np.ascontiguousarray(
-        t[::-1]), spacing).transpose(), 22.5, fwd=False)
+    hcos['nnw'] = Horizon(
+        d2r(-157.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), 22.5, fwd=False)
+    )
 
     # SE
     t = skew(dem, 45).transpose()
-    hcos['se'] = skew(hor1d.hor2d_c(np.ascontiguousarray(t),
-                                    spacing).transpose(), 45, fwd=False)
+    hcos['se'] = Horizon(
+        d2r(45),
+        skew(hor1d.hor2d_c(t, spacing).transpose(), 45, fwd=False)
+    )
 
     # NW
-    hcos['nw'] = skew(hor1d.hor2d_c(np.ascontiguousarray(
-        t[::-1]), spacing).transpose(), 45, fwd=False)
+    hcos['nw'] = Horizon(
+        d2r(-135),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), 45, fwd=False)
+    )
 
     # S
     demt = dem.transpose()
-    hcos['s'] = hor1d.hor2d_c(np.ascontiguousarray(demt),
-                              spacing).transpose()
+    hcos['s'] = Horizon(
+        d2r(0),
+        hor1d.hor2d_c(demt, spacing).transpose()
+    )
 
     # N
-    hcos['n'] = hor1d.hor2d_c(np.ascontiguousarray(demt[::1]),
-                              spacing).transpose()
+    hcos['n'] = Horizon(
+        d2r(180),
+        hor1d.hor2d_c(demt, spacing, fwd=False).transpose()
+    )
 
     # ENE
     t = skew(demt, -22.5).transpose()
-    hcos['ene'] = skew(hor1d.hor2d_c(np.ascontiguousarray(t),
-                                     spacing).transpose(), -22.5, fwd=False).transpose()
+    hcos['ene'] = Horizon(
+        d2r(112.5),
+        skew(hor1d.hor2d_c(t, spacing).transpose(), -22.5, fwd=False).transpose()
+    )
 
     # WSW
-    hcos['wsw'] = skew(hor1d.hor2d_c(np.ascontiguousarray(
-        demt[::-1]), spacing).transpose(), -22.5, fwd=False).transpose()
+    hcos['wsw'] = Horizon(
+        d2r(-67.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -
+             22.5, fwd=False).transpose()
+    )
 
     # ESE
     t = skew(demt, 22.5).transpose()
-    hcos['ese'] = skew(hor1d.hor2d_c(np.ascontiguousarray(t),
-                                     spacing).transpose(), 22.5, fwd=False).transpose()
+    hcos['ese'] = Horizon(
+        d2r(67.5),
+        skew(hor1d.hor2d_c(t, spacing).transpose(), 22.5, fwd=False).transpose()
+    )
 
     # WNW
-    hcos['wnw'] = skew(hor1d.hor2d_c(np.ascontiguousarray(
-        demt[::-1]), spacing).transpose(), 22.5, fwd=False).transpose()
+    hcos['wnw'] = Horizon(
+        d2r(-112.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(),
+             22.5, fwd=False).transpose()
+    )
 
-    # calcualte the gradient
+    # sanity check
+    for key in hcos.keys():
+        assert hcos[key].hcos.shape == dem.shape
+
+    # calculate the gradient if not provided
+    # Fill in after PR #125 as it'll be much simpler
     if slope is None:
         pass
 
-    svf = viewcalc(slope, hcos)
+    svf, tcf = viewcalc(slope, aspect, hcos)
 
-    return svf
+    return svf, tcf
 
 
-def viewcalc(gradient, hcos):
+def viewcalc(slope, aspect, hcos):
     """
+    Given the slope, aspect and dictionary of horizon
+    angles, calculate the cooresponding sky view and terrain
+    configuration factors.
+
+    terrain configuration factor (tvf) is defined as:
+    (1 + cos(slope))/2 - sky view factor
+
+    Args:
+        slope: sin(slope) with range from 0 to 1
+        aspect: Aspect as radians from south (aspect 0 is toward
+                the south) with range from -pi to pi, with negative
+                values to the west and positive values to the east.
+        hcos: cosines of angles to horizon
+
+    Returns:
+        svf: sky view factor
+        tcf: terrain configuration factor
+
     """
-    pass
+
+    if np.max(slope) > 1:
+        raise ValueError('viewcalc: slope may not be supplied as sin(S)')
+
+    if np.abs(np.max(aspect)) > np.pi:
+        raise ValueError('viewcalc: aspect should range from +/- PI')
+
+    # Trig tables for the constanst values that don't change
+    cos_slope, sin_squared, h_mult, cos_aspect = trigtbl(slope, aspect, hcos)
+
+    # perform the integral
+    svf = np.zeros_like(slope)
+    for key in hcos.keys():
+        intgrnd = cos_slope * sin_squared[key] + \
+            slope * cos_aspect[key] * h_mult[key]
+        svf[intgrnd > 0] += intgrnd[intgrnd > 0]
+
+    svf = svf / len(hcos)
+
+    tcf = (1 + cos_slope)/2 - svf
+
+    return svf, tcf
+
+
+def trigtbl(slope, aspect, hcos):
+    """
+    Calculate the trigometic relationship of the sky view factor using
+    equation 7b from Dozier and Frew 1990
+
+    .. math::
+        V_d \approx \frac{1}{2\pi} \int_{0}^{2\pi}\left [ cos(S) sin^2{H_\phi} + sin(S)cos(\phi-A)
+        \times \left ( H_\phi - sin(H_\phi) cos(H_\phi) \right )\right ] d\phi
+
+    Args:
+        slope: sin(slope) with range from 0 to 1
+        aspect: Aspect as radians from south (aspect 0 is toward
+                the south) with range from -pi to pi, with negative
+                values to the west and positive values to the east.
+        hcos: cosines of angles to horizon
+    """
+
+    # cosine of slopes, slope is provided as sin(slope)
+    cos_slope = np.sqrt((1 - slope) * (1 + slope))
+
+    # sines and values of horizon angles from zenith
+    sin_squared = {key: None for key in hcos.keys()}
+    h_mult = {key: None for key in hcos.keys()}
+    cos_aspect = {key: None for key in hcos.keys()}
+    for key, h in hcos.items():
+        # sin squared of horizon
+        sin_squared[key] = (1 - h.hcos) * (1 + h.hcos)
+
+        # H - sin(H)cos(H)
+        h_mult[key] = np.arccos(h.hcos) - np.sqrt(sin_squared[key]) * h.hcos
+
+        # cosines of difference between horizon aspect and slope aspect
+        cos_aspect[key] = np.cos(h.azimuth - aspect)
+
+    return cos_slope, sin_squared, h_mult, cos_aspect
 
 
 def skew(arr, angle, fwd=True):

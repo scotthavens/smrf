@@ -95,16 +95,24 @@ class TestViewf(SMRFTestCase):
         # hipw = ipw.IPW('tests/RME/gold/radiation/hor1d.ipw')
         # hipw = hipw.bands[0].data
 
-        # IPW topo calc
+        # IPW topo calc for sky view factor
         topo = loadTopo.topo(topo_config, calcInput=True,
                              tempDir='tests/RME/output')
         dx = np.mean(np.diff(topo.x))
+        ipw_svf = topo.stoporad_in.bands[3].data
+        ipw_tcf = topo.stoporad_in.bands[3].data
 
         # Calcualte the sky view factor
-        svf = viewf.viewf(topo.dem, dx, slope=topo.slope)
+        svf, tcf = viewf.viewf(
+            topo.dem, dx, slope=topo.slope, aspect=topo.aspect)
 
-        plt.imshow(svf)
+        plt.imshow(ipw_svf - svf)
         plt.title('Sky view factor')
+        plt.colorbar()
+        plt.show()
+
+        plt.imshow(ipw_tcf - tcf)
+        plt.title('Terrain configuration factor')
         plt.colorbar()
         plt.show()
 

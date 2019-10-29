@@ -4,7 +4,7 @@ from math import hypot
 from smrf.utils.topo.core import topo_core
 
 
-def hor2d_c(z, spacing):
+def hor2d_c(z, spacing, fwd=True):
     """
     Calculate values of cosines of angles to horizons in 2 dimension, 
     measured from zenith, from elevation difference and distance.  Let
@@ -30,8 +30,16 @@ def hor2d_c(z, spacing):
 
     spacing = np.double(spacing)
 
+    if not fwd:
+        z = np.ascontiguousarray(z[::-1])
+    else:
+        z = np.ascontiguousarray(z)
+
     h = np.zeros_like(z)
     topo_core.c_hor2d(z, spacing, h)
+
+    if not fwd:
+        h = h[::-1]
 
     return h
 
