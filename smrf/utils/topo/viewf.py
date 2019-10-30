@@ -46,24 +46,24 @@ def viewf(dem, spacing, nangles=16, slope=None, aspect=None):
     hcos = {}
     Horizon = collections.namedtuple('Horizon', ['azimuth', 'hcos'])
 
-    # # East
-    # hcos['e'] = Horizon(
-    #     d2r(90),
-    #     hor1d.hor2d_c(dem, spacing)
-    # )
+    # East
+    hcos['e'] = Horizon(
+        d2r(90),
+        hor1d.hor2d_c(dem, spacing)
+    )
 
-    # # West
-    # hcos['w'] = Horizon(
-    #     d2r(-90),
-    #     hor1d.hor2d_c(dem, spacing, fwd=False)
-    # )
+    # West
+    hcos['w'] = Horizon(
+        d2r(-90),
+        hor1d.hor2d_c(dem, spacing, fwd=False)
+    )
 
     # SSW
     t = skew(dem, -22.5).transpose()
-    # hcos['ssw'] = Horizon(
-    #     d2r(-22.5),
-    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -22.5, fwd=False)
-    # )
+    hcos['ssw'] = Horizon(
+        d2r(-22.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -22.5, fwd=False)
+    )
 
     # NNE
     hcos['nne'] = Horizon(
@@ -71,85 +71,85 @@ def viewf(dem, spacing, nangles=16, slope=None, aspect=None):
         skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -22.5, fwd=False)
     )
 
-    # # SW
-    # t = skew(dem, -45).transpose()
-    # hcos['sw'] = Horizon(
-    #     d2r(-45),
-    #     skew(hor1d.hor2d_c(t, spacing).transpose(), -45, fwd=False)
-    # )
+    # SW
+    t = skew(dem, -45).transpose()
+    hcos['sw'] = Horizon(
+        d2r(-45),
+        skew(hor1d.hor2d_c(t, spacing).transpose(), -45, fwd=False)
+    )
 
-    # # NE
-    # hcos['ne'] = Horizon(
-    #     d2r(135),
-    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -45, fwd=False)
-    # )
+    # NE
+    hcos['ne'] = Horizon(
+        d2r(135),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -45, fwd=False)
+    )
 
-    # # SSE
-    # t = skew(dem, 22.5).transpose()
-    # hcos['sse'] = Horizon(
-    #     d2r(22.5),
-    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), 22.5, fwd=False)
-    # )
+    # SSE
+    t = skew(dem, 22.5).transpose()
+    hcos['sse'] = Horizon(
+        d2r(22.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), 22.5, fwd=False)
+    )
 
-    # # NNW
-    # hcos['nnw'] = Horizon(
-    #     d2r(-157.5),
-    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), 22.5, fwd=False)
-    # )
+    # NNW
+    hcos['nnw'] = Horizon(
+        d2r(-157.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), 22.5, fwd=False)
+    )
 
-    # # SE
-    # t = skew(dem, 45).transpose()
-    # hcos['se'] = Horizon(
-    #     d2r(45),
-    #     skew(hor1d.hor2d_c(t, spacing).transpose(), 45, fwd=False)
-    # )
+    # SE
+    t = skew(dem, 45).transpose()
+    hcos['se'] = Horizon(
+        d2r(45),
+        skew(hor1d.hor2d_c(t, spacing).transpose(), 45, fwd=False)
+    )
 
-    # # NW
-    # hcos['nw'] = Horizon(
-    #     d2r(-135),
-    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), 45, fwd=False)
-    # )
+    # NW
+    hcos['nw'] = Horizon(
+        d2r(-135),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), 45, fwd=False)
+    )
 
-    # # S
-    # demt = dem.transpose()
-    # hcos['s'] = Horizon(
-    #     d2r(0),
-    #     hor1d.hor2d_c(demt, spacing).transpose()
-    # )
+    # S
+    demt = dem.transpose()
+    hcos['s'] = Horizon(
+        d2r(0),
+        hor1d.hor2d_c(demt, spacing).transpose()
+    )
 
-    # # N
-    # hcos['n'] = Horizon(
-    #     d2r(180),
-    #     hor1d.hor2d_c(demt, spacing, fwd=False).transpose()
-    # )
+    # N
+    hcos['n'] = Horizon(
+        d2r(180),
+        hor1d.hor2d_c(demt, spacing, fwd=False).transpose()
+    )
 
-    # # ENE
-    # t = skew(demt, -22.5).transpose()
-    # hcos['ene'] = Horizon(
-    #     d2r(112.5),
-    #     skew(hor1d.hor2d_c(t, spacing).transpose(), -22.5, fwd=False).transpose()
-    # )
+    # ENE
+    t = skew(demt, -22.5).transpose()
+    hcos['ene'] = Horizon(
+        d2r(112.5),
+        skew(hor1d.hor2d_c(t, spacing).transpose(), -22.5, fwd=False).transpose()
+    )
 
-    # # WSW
-    # hcos['wsw'] = Horizon(
-    #     d2r(-67.5),
-    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -
-    #          22.5, fwd=False).transpose()
-    # )
+    # WSW
+    hcos['wsw'] = Horizon(
+        d2r(-67.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -
+             22.5, fwd=False).transpose()
+    )
 
-    # # ESE
-    # t = skew(demt, 22.5).transpose()
-    # hcos['ese'] = Horizon(
-    #     d2r(67.5),
-    #     skew(hor1d.hor2d_c(t, spacing).transpose(), 22.5, fwd=False).transpose()
-    # )
+    # ESE
+    t = skew(demt, 22.5).transpose()
+    hcos['ese'] = Horizon(
+        d2r(67.5),
+        skew(hor1d.hor2d_c(t, spacing).transpose(), 22.5, fwd=False).transpose()
+    )
 
-    # # WNW
-    # hcos['wnw'] = Horizon(
-    #     d2r(-112.5),
-    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(),
-    #          22.5, fwd=False).transpose()
-    # )
+    # WNW
+    hcos['wnw'] = Horizon(
+        d2r(-112.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(),
+             22.5, fwd=False).transpose()
+    )
 
     # sanity check
     for key in hcos.keys():
@@ -202,7 +202,7 @@ def viewcalc(slope, aspect, hcos):
         intgrnd = cos_slope * sin_squared[key] + \
             slope * cos_aspect[key] * h_mult[key]
         svf[intgrnd > 0] += intgrnd[intgrnd > 0]
-        svf = h_mult[key]
+        # svf = h_mult[key]
 
     svf = svf / len(hcos)
 

@@ -106,9 +106,12 @@ class TestViewf(SMRFTestCase):
         svf, tcf = viewf.viewf(
             topo.dem, dx, slope=topo.slope, aspect=topo.aspect)
 
-        plt.imshow(ipw_svf - svf)
+        plt.imshow(10*(ipw_svf-svf/10))
         plt.title('Sky view factor')
         plt.colorbar()
+        plt.show()
+
+        plt.hist((10*(ipw_svf-svf/10)).flatten(), bins=50)
         plt.show()
 
         plt.imshow(ipw_tcf - tcf)

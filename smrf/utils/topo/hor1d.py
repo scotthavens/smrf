@@ -31,7 +31,7 @@ def hor2d_c(z, spacing, fwd=True):
     spacing = np.double(spacing)
 
     if not fwd:
-        z = np.ascontiguousarray(z[::-1])
+        z = np.ascontiguousarray(np.fliplr(z))
     else:
         z = np.ascontiguousarray(z)
 
@@ -39,7 +39,7 @@ def hor2d_c(z, spacing, fwd=True):
     topo_core.c_hor2d(z, spacing, h)
 
     if not fwd:
-        h = h[::-1]
+        h = np.fliplr(h)
 
     return h
 
@@ -71,7 +71,7 @@ def hor1d_c(z, spacing):
     return h
 
 
-def hor1d(z, spacing):
+def hor1d(z, spacing, fwd=True):
     """
     Calculate values of cosines of angles to horizons, measured
     from zenith, from elevation difference and distance.  Let
@@ -92,12 +92,18 @@ def hor1d(z, spacing):
     if z.ndim != 2:
         raise ValueError('hor1d input of z is not a 2D array')
 
+    if not fwd:
+        z = np.fliplr(z)
+
     hcos = np.zeros_like(z)
     nrow = z.shape[0]
 
     for i in range(nrow):
         h = hor1f(z[i, :])
         hcos[i, :] = horval(z[i, :], spacing, h)
+
+    if not fwd:
+        hcos = np.fliplr(hcos)
 
     return hcos
 
