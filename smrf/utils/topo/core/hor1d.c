@@ -18,7 +18,6 @@ void hor2d(
     int *h,       /* horizon function */
     double *hcos) /* cosines of angles to horizon */
 {
-    printf("here");
     int i, j; /* loop index */
 
     /*
@@ -38,7 +37,6 @@ void hor2d(
      */
     for (i = 0; i < nrows; i++)
     {
-        // printf("%i: ", i);
         // Fill the zbuf with the rows elevation
         for (j = 0; j < ncols; j++)
         {
@@ -57,25 +55,9 @@ void hor2d(
 
         for (j = 0; j < ncols; j++)
         {
-            // printf("%i | ", i * ncols + j);
             hcos[i * ncols + j] = obuf[j];
-            // printf("%i | ", j);
         }
-        // printf("\n");
     }
-
-    // free(hbuf);
-    // free(obuf);
-    // free(zbuf);
-
-    // // bring back the results into hcos
-    // for (i = 0; i < nrows; i++)
-    // {
-    //     for (j = 0; j < ncols; j++)
-    //     {
-    //         hcos[i * (nrows - 1) + j] = obuf[i][j];
-    //     }
-    // }
 }
 
 int hor1f(
@@ -112,6 +94,84 @@ int hor1f(
         */
         if ((k = i + 2) >= n)
             --k;
+        /*
+        * loop until horizon found
+        */
+
+        do
+        {
+            /*
+            * slopes from i to j and from j to its horizon
+            */
+
+            j = k;
+            k = h[j];
+            sij = SLOPE(i, j, zi, z[j]);
+            sihj = SLOPE(i, k, zi, z[k]);
+
+            /*
+            * if slope(i,j) >= slope(i,h[j]), horizon has been found; otherwise
+            * set j to k (=h[j]) and loop again
+            */
+
+        } while (sij < sihj);
+
+        /*
+        * if slope(i,j) > slope(j,h[j]), j is i's horizon; else if slope(i,j)
+        * is zero, i is its own horizon; otherwise slope(i,j) = slope(i,h[j])
+        * so h[j] is i's horizon
+        */
+
+        if (sij > sihj)
+        {
+            h[i] = j;
+        }
+        else if (sij == 0)
+        {
+            h[i] = i;
+        }
+        else
+        {
+            h[i] = k;
+        }
+    }
+    return (0);
+}
+
+int hor1b(
+    int n,     /* length of vectors b and h */
+    double *z, /* elevation function */
+    int *h)    /* horizon function (return) */
+{
+    double sihj; /* slope i to h[j] */
+    double sij;  /* slope i to j */
+    double zi;   /* z[i] */
+    int i;       /* point index */
+    int j;       /* point index */
+    int k;       /* h[j] */
+
+    /*
+    * end point is its own horizon in forward direction; first point is
+    * its own horizon in backward direction
+    */
+    h[0] = 0;
+
+    /*
+    * For forward direction, loop runs from next-to-end backward to
+    * beginning.  For backward direction, loop runs from
+    * next-to-beginning forward to end.
+    */
+    for (i = 1; i < n; ++i)
+    {
+        zi = z[i];
+
+        /*
+        * Start with next-to-adjacent point in either forward or backward
+        * direction, depending on which way loop is running. Note that we
+        * don't consider the adjacent point; this seems to help reduce noise.
+        */
+        if ((k = i - 2) >= n)
+            ++k;
         /*
         * loop until horizon found
         */

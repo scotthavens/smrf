@@ -17,6 +17,7 @@ np.import_array()
 
 cdef extern from "topo_core.h":
     void hor1f(int n, double *z, int *h);
+    void hor1b(int n, double *z, int *h);
     void horval(int n, double *z, double delta, int *h, double *hcos);
     void hor2d(int n, int m, double *z, double delta, int *h, double *hcos);
 
@@ -65,6 +66,7 @@ def c_hor1d(np.ndarray[double, mode="c", ndim=1] z,
 # https://github.com/cython/cython/wiki/tutorials-NumpyPointerToC
 def c_hor2d(np.ndarray[double, mode="c", ndim=2] z,
            double spacing,
+           bool backwards,
            np.ndarray[double, mode="c", ndim=2] hcos):
     """
     Call the function hor1f in hor1f.c
@@ -91,4 +93,4 @@ def c_hor2d(np.ndarray[double, mode="c", ndim=2] z,
     cdef np.ndarray[int, ndim=2, mode='c'] h = np.empty((nrows,ncols), dtype = ctypes.c_int)
 
     # call the hor2d C function
-    hor2d(nrows, ncols, &z_arr[0,0], spacing, &h[0,0], &hcos[0,0])
+    hor2d(nrows, ncols, &z_arr[0,0], spacing, backwards, &h[0,0], &hcos[0,0])
