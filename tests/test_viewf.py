@@ -10,6 +10,14 @@ from smrf.utils.topo import hor1d, viewf
 
 from tests.test_configurations import SMRFTestCase
 
+rme_topo_config = {
+    'basin_lon': -116.7547,
+    'basin_lat': 43.067,
+    'filename': 'tests/RME/topo/topo.nc',
+    'type': 'netcdf',
+            'threading': False
+}
+
 
 class TestViewf(SMRFTestCase):
 
@@ -43,16 +51,8 @@ class TestViewf(SMRFTestCase):
     def test_hor1d_RME_forward(self):
         """ Hor1d on the RME test dem forward"""
 
-        topo_config = {
-            'basin_lon': -116.7547,
-            'basin_lat': 43.067,
-            'filename': 'tests/RME/topo/topo.nc',
-            'type': 'netcdf',
-            'threading': False
-        }
-
         # IPW topo calc
-        topo = loadTopo.topo(topo_config, calcInput=True,
+        topo = loadTopo.topo(rme_topo_config, calcInput=True,
                              tempDir='tests/RME/output')
 
         dx = np.mean(np.diff(topo.x))
@@ -82,16 +82,8 @@ class TestViewf(SMRFTestCase):
     def test_hor1d_RME_backward(self):
         """ Hor1d on the RME test dem backward """
 
-        topo_config = {
-            'basin_lon': -116.7547,
-            'basin_lat': 43.067,
-            'filename': 'tests/RME/topo/topo.nc',
-            'type': 'netcdf',
-            'threading': False
-        }
-
         # IPW topo calc
-        topo = loadTopo.topo(topo_config, calcInput=True,
+        topo = loadTopo.topo(rme_topo_config, calcInput=True,
                              tempDir='tests/RME/output')
 
         dx = np.mean(np.diff(topo.x))
@@ -175,21 +167,8 @@ class TestViewf(SMRFTestCase):
     def test_viewf_RME(self):
         """ Test the view factor for RME """
 
-        topo_config = {
-            'basin_lon': -116.7547,
-            'basin_lat': 43.067,
-            'filename': 'tests/RME/topo/topo.nc',
-            'type': 'netcdf',
-            'threading': False
-        }
-
-        # ~/code/ipw/src/bin/topocalc/horizon/hor1d/hor1d -a 90 dem.ipw > hor1d.ipw
-        # hor1d in the East direction
-        # hipw = ipw.IPW('tests/RME/gold/radiation/hor1d.ipw')
-        # hipw = hipw.bands[0].data
-
         # IPW topo calc for sky view factor
-        topo = loadTopo.topo(topo_config, calcInput=True,
+        topo = loadTopo.topo(rme_topo_config, calcInput=True,
                              tempDir='tests/RME/output')
         dx = np.mean(np.diff(topo.x))
         ipw_svf = topo.stoporad_in.bands[3].data
@@ -246,7 +225,7 @@ class TestViewf(SMRFTestCase):
     def test_skew(self):
         """ Test the skew of an image """
 
-        # arr = np.tile(range(1000), (1000, 1))
+        # Use the Tuolumne DEM
         infile = 'tests/Tuolumne/topo/dem_50m.ipw'
         out_dir = 'tests/Tuolumne/output'
         i = ipw.IPW(infile)
@@ -271,3 +250,37 @@ class TestViewf(SMRFTestCase):
         # test the error
         self.assertRaises(ValueError, viewf.skew, arr, -100)
         self.assertRaises(ValueError, viewf.skew, arr, 100)
+
+    def test_skew_hor1d_RME_foward(self):
+        """ Test the skew then hor1d call """
+
+        topo = loadTopo.topo(rme_topo_config, calcInput=True,
+                             tempDir='tests/RME/output')
+        dx = np.mean(np.diff(topo.x))
+
+        dem_file = 'tests/RME/output/dem.ipw'
+        cmd = 'demux -b 0 tests/RME/output/stoporad_in.ipw > {}'.format(
+            dem_file)
+        proc = sp.Popen(cmd, shell=True, env=os.environ.copy()).wait()
+
+        # IPW command
+        hcmd = '$IPW/aux/horizon/hor1d'
+        out_file = 'tests/RME/output/horz.ipw'
+        cmd = 'skew -a -22.5 {} | transpose | {} -a -22.5 | transpose | skew > {}'.format(
+            dem_file, hcmd, out_file)
+
+        # compare the 1D horizon functions
+        h = hor1d.hor1f(topo.dem[1, :])
+        py_hcos = hor1d.horval(topo.dem[1, :], dx, h)
+
+        # C version
+        c_hcos = hor1d.hor1d_c(topo.dem[1, :], dx)
+        self.assertTrue(np.all(c_hcos == py_hcos))
+
+        # 2D horizon functions
+        hcos = hor1d.hor1d(topo.dem, dx)
+        hcos2 = hor1d.hor2d_c(topo.dem, dx)
+        self.assertTrue(np.all(hcos == hcos2))
+
+        # about the tolerance between a 16bit image and a float
+        self.assertTrue(np.allclose(hipw, hcos, atol=1e-4))

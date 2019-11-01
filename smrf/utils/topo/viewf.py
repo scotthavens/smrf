@@ -58,12 +58,12 @@ def viewf(dem, spacing, nangles=16, slope=None, aspect=None):
     #     hor1d.hor2d_c(dem, spacing, fwd=False)
     # )
 
-    # SSW
-    t = skew(dem, -22.5).transpose()
-    hcos['ssw'] = Horizon(
-        d2r(-22.5),
-        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -22.5, fwd=False)
-    )
+    # # SSW
+    # t = skew(dem, -22.5).transpose()
+    # hcos['ssw'] = Horizon(
+    #     d2r(-22.5),
+    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -22.5, fwd=False)
+    # )
 
     # # NNE
     # hcos['nne'] = Horizon(
@@ -72,17 +72,17 @@ def viewf(dem, spacing, nangles=16, slope=None, aspect=None):
     # )
 
     # # SW
-    # t = skew(dem, -45).transpose()
+    t = skew(dem, -45).transpose()
     # hcos['sw'] = Horizon(
     #     d2r(-45),
     #     skew(hor1d.hor2d_c(t, spacing).transpose(), -45, fwd=False)
     # )
 
-    # # NE
-    # hcos['ne'] = Horizon(
-    #     d2r(135),
-    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -45, fwd=False)
-    # )
+    # NE
+    hcos['ne'] = Horizon(
+        d2r(135),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -45, fwd=False)
+    )
 
     # # SSE
     # t = skew(dem, 22.5).transpose()
@@ -249,7 +249,7 @@ def trigtbl(slope, aspect, hcos):
     return cos_slope, sin_squared, h_mult, cos_aspect
 
 
-def skew(arr, angle, fwd=True, fill_min=False):
+def skew(arr, angle, fwd=True, fill_min=True):
     """
     Skew the origin of successive lines by a specified angle
     A skew with angle of 30 degrees causes the following transformation:
