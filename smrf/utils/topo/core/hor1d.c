@@ -4,17 +4,22 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include "topo_core.h"
 
-#define SLOPE(i, j, zi, zj) \
+#define SLOPEF(i, j, zi, zj) \
     (((zj) <= (zi)) ? 0 : ((zj) - (zi)) / ((float)((j) - (i))))
+
+#define SLOPEB(i, j, zi, zj) \
+    (((zj) <= (zi)) ? 0 : ((zj) - (zi)) / ((float)((i) - (j))))
 
 void hor2d(
     int nrows,    /* rows of elevations array */
     int ncols,    /* columns of elevations array */
     double *z,    /* elevations */
     double delta, /* spacing */
+    bool forward, /* forward function */
     int *h,       /* horizon function */
     double *hcos) /* cosines of angles to horizon */
 {
@@ -46,7 +51,14 @@ void hor2d(
         /*
     	 * find points that form horizons
     	 */
-        hor1f(ncols, zbuf, hbuf);
+        if (forward)
+        {
+            hor1f(ncols, zbuf, hbuf);
+        }
+        else
+        {
+            hor1b(ncols, zbuf, hbuf);
+        }
 
         /*
     	 * if not mask output, compute and write horizons along each row
@@ -106,8 +118,8 @@ int hor1f(
 
             j = k;
             k = h[j];
-            sij = SLOPE(i, j, zi, z[j]);
-            sihj = SLOPE(i, k, zi, z[k]);
+            sij = SLOPEF(i, j, zi, z[j]);
+            sihj = SLOPEF(i, k, zi, z[k]);
 
             /*
             * if slope(i,j) >= slope(i,h[j]), horizon has been found; otherwise
@@ -170,7 +182,7 @@ int hor1b(
         * direction, depending on which way loop is running. Note that we
         * don't consider the adjacent point; this seems to help reduce noise.
         */
-        if ((k = i - 2) >= n)
+        if ((k = i - 2) < 0)
             ++k;
         /*
         * loop until horizon found
@@ -184,8 +196,8 @@ int hor1b(
 
             j = k;
             k = h[j];
-            sij = SLOPE(i, j, zi, z[j]);
-            sihj = SLOPE(i, k, zi, z[k]);
+            sij = SLOPEB(i, j, zi, z[j]);
+            sihj = SLOPEB(i, k, zi, z[k]);
 
             /*
             * if slope(i,j) >= slope(i,h[j]), horizon has been found; otherwise
