@@ -52,18 +52,18 @@ def viewf(dem, spacing, nangles=16, slope=None, aspect=None):
     #     hor1d.hor2d_c(dem, spacing)
     # )
 
-    # West
-    hcos['w'] = Horizon(
-        d2r(-90),
-        hor1d.hor2d_c(dem, spacing, fwd=False)
-    )
-
-    # # SSW
-    # t = skew(dem, -22.5).transpose()
-    # hcos['ssw'] = Horizon(
-    #     d2r(-22.5),
-    #     skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -22.5, fwd=False)
+    # # West
+    # hcos['w'] = Horizon(
+    #     d2r(-90),
+    #     hor1d.hor2d_c(dem, spacing, fwd=False)
     # )
+
+    # SSW
+    t = skew(dem, -22.5).transpose()
+    hcos['ssw'] = Horizon(
+        d2r(-22.5),
+        skew(hor1d.hor2d_c(t, spacing, fwd=False).transpose(), -22.5, fwd=False)
+    )
 
     # # NNE
     # hcos['nne'] = Horizon(
@@ -202,6 +202,7 @@ def viewcalc(slope, aspect, hcos):
         intgrnd = cos_slope * sin_squared[key] + \
             slope * cos_aspect[key] * h_mult[key]
         svf[intgrnd > 0] += intgrnd[intgrnd > 0]
+
         svf = h_mult[key]
 
     svf = svf / len(hcos)
@@ -248,7 +249,7 @@ def trigtbl(slope, aspect, hcos):
     return cos_slope, sin_squared, h_mult, cos_aspect
 
 
-def skew(arr, angle, fwd=True):
+def skew(arr, angle, fwd=True, fill_min=False):
     """
     Skew the origin of successive lines by a specified angle
     A skew with angle of 30 degrees causes the following transformation:
@@ -269,6 +270,7 @@ def skew(arr, angle, fwd=True):
         arr: array to skew
         angle: angle between -45 and 45 to skew by
         fwd: add skew to image if True, unskew image if False
+        fill_min: While IPW skew says it fills with zeros, the output image isn't
 
     Returns:
         skewed array
@@ -299,6 +301,9 @@ def skew(arr, angle, fwd=True):
         o_nsamps -= max_skew
 
     b = np.zeros((nlines, o_nsamps))
+    if fill_min:
+        b += np.min(arr)
+
     for line in range(nlines):
         o = line if negflag else nlines - line - 1
         offset = int(o * slope + 0.5)

@@ -2,6 +2,8 @@ from spatialnc import ipw
 import matplotlib.pyplot as plt
 import numpy as np
 import unittest
+import os
+import subprocess as sp
 
 from smrf.data import loadTopo
 from smrf.utils.topo import hor1d, viewf
@@ -10,6 +12,33 @@ from tests.test_configurations import SMRFTestCase
 
 
 class TestViewf(SMRFTestCase):
+
+    def ipw_skew(self, angle, infile, out_dir):
+
+        skew_out = os.path.join(out_dir, 'skew.ipw')
+        unskew_out = os.path.join(out_dir, 'unskew.ipw')
+
+        # Skew the image
+        cmd = 'skew -a {} {} > {}'.format(angle, infile, skew_out)
+        proc = sp.Popen(cmd, shell=True, env=os.environ.copy()).wait()
+
+        if proc != 0:
+            raise OSError('IPW skew failed')
+
+        # Unskew the image
+        cmd = 'skew {} > {}'.format(skew_out, unskew_out)
+        proc = sp.Popen(cmd, shell=True, env=os.environ.copy()).wait()
+
+        if proc != 0:
+            raise OSError('IPW skew failed')
+
+        i = ipw.IPW(skew_out)
+        ii = ipw.IPW(unskew_out)
+
+        os.remove(skew_out)
+        os.remove(unskew_out)
+
+        return i.bands[0].data, ii.bands[0].data
 
     def test_hor1d_RME_forward(self):
         """ Hor1d on the RME test dem forward"""
@@ -178,10 +207,10 @@ class TestViewf(SMRFTestCase):
         plt.hist((10*(ipw_svf-svf/10)).flatten(), bins=50)
         plt.show()
 
-        plt.imshow(ipw_tcf - tcf)
-        plt.title('Terrain configuration factor')
-        plt.colorbar()
-        plt.show()
+        # plt.imshow(ipw_tcf - tcf)
+        # plt.title('Terrain configuration factor')
+        # plt.colorbar()
+        # plt.show()
 
     def test_viewf_Tuolumne(self):
         """ viewf Tuolumne test """
@@ -217,14 +246,24 @@ class TestViewf(SMRFTestCase):
     def test_skew(self):
         """ Test the skew of an image """
 
-        arr = np.tile(range(1000), (1000, 1))
+        # arr = np.tile(range(1000), (1000, 1))
+        infile = 'tests/Tuolumne/topo/dem_50m.ipw'
+        out_dir = 'tests/Tuolumne/output'
+        i = ipw.IPW(infile)
+        arr = i.bands[0].data
 
         for angle in range(-45, 45, 5):
+
+            # Get the IPW skew values
+            ipw_skew, ipw_unskew = self.ipw_skew(angle, infile, out_dir)
+
             # skew the initial array
-            sarr = viewf.skew(arr, angle=angle)
+            sarr = viewf.skew(arr, angle=angle, fill_min=True)
+            self.assertTrue(np.all(sarr == ipw_skew))
 
             # skew it back to original
             sbarr = viewf.skew(sarr, angle=angle, fwd=False)
+            self.assertTrue(np.all(sbarr == ipw_unskew))
 
             # ensure that the skewed back is the same as the original
             self.assertTrue(np.all(arr == sbarr))
